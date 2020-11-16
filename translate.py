@@ -21,8 +21,3 @@ def translate_word(word):
     resp_dict = json.loads(response.text)
 
     return resp_dict['translations'][0]['text']
-
-
-word = 'think'
-
-print(translate_word(word))
