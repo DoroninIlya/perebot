@@ -27,9 +27,9 @@ async def start(event):
 
 @bot.on(events.NewMessage)
 async def echo(event):
-    translated_word = translate.translate_word(event.text)
+    translated_text = translate.detect_and_translate_text(event.text)
 
-    await event.respond(translated_word)
+    await event.respond(translated_text)
 
 
 def main():
