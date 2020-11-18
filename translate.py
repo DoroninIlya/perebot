@@ -114,6 +114,9 @@ def detect_language(text):
 
 def detect_and_translate_text(text):
 
+    if text == '':
+        return WRONG_TEXT_ERROR
+
     detected_language = detect_language(text)
 
     if detected_language == '':
