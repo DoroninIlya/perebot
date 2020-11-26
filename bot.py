@@ -39,7 +39,7 @@ async def echo(event):
 
     sender = await event.get_sender()
 
-    db_connector.add_word_to_dictionary(sender.id, translated_text)
+    #db_connector.add_word_to_dictionary(sender.id, translated_text)
 
     await event.respond(translated_text[1][1])
 
