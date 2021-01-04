@@ -1,17 +1,6 @@
-import json
-import os
-
-import requests
-from dotenv import load_dotenv
-
 import logger
+import translate_api_handler
 
-load_dotenv()
-
-TOKEN = os.getenv('YANDEX_TOKEN')
-FOLDER_ID = os.getenv('YANDEX_FOLDER_ID')
-
-BASIC_URL = 'https://translate.api.cloud.yandex.net/translate/v2'
 FIRST_LANG = 'en'
 SECOND_LANG = 'ru'
 WRONG_TEXT_ERROR = (
@@ -23,40 +12,17 @@ UNSPECIFIED_ERROR = (
     'Попробуйте еще раз позже'
     )
 
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Api-Key {TOKEN}',
-    }
-
 
 def translate_text(text, language):
 
     language_pair = get_language_pair(language)
 
-    url = BASIC_URL + '/translate'
-    payload = ({
-        'folder_id': FOLDER_ID,
-        'texts': [text],
-        'targetLanguageCode': language_pair[0],
-        'sourceLanguageCode': language_pair[1],
-        })
-
     logger.info('Делаем запрос на перевод слова')
 
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-    except Exception:
-        logger.critical('Запрос на перевод не выполнен')
-
-    if not response.ok:
-        status_code = str(response.status_code)
-
-        logger.critical(f'В ответе на запрос вернулась ошибка: {status_code}')
-
-        return status_code
+    response = translate_api_handler.get_translation(language_pair, text)
 
     try:
-        translated_text = json.loads(response.text)['translations'][0]['text']
+        translated_text = translate_api_handler.parse_translation_response(response.text)
     except Exception:
         logger.critical('Парсинг ответа не выполнен')
 
@@ -79,29 +45,12 @@ def detect_language(text):
 
     language = ''
 
-    url = BASIC_URL + '/detect'
-    payload = ({
-        'folder_id': FOLDER_ID,
-        'languageCodeHints': ['ru', 'en'],
-        'text': text,
-        })
-
     logger.info('Делаем запрос на определение языка')
 
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-    except Exception:
-        logger.critical('Запрос на определение языка не выполнен')
-
-    if not response.ok:
-        status_code = str(response.status_code)
-
-        logger.critical(f'В ответе на запрос вернулась ошибка: {status_code}')
-
-        return status_code
+    response = translate_api_handler.get_language(text)
 
     try:
-        language = json.loads(response.text)['languageCode']
+        language = translate_api_handler.parse_language_response(response.text)
     except Exception:
         logger.critical('Парсинг ответа не выполнен')
 
