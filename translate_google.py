@@ -89,7 +89,7 @@ def detect_language(text):
         logger.critical('Запрос на определение языка не выполнен')
 
     if not response.ok:
-        status_code = str(response.text)
+        status_code = str(response.status_code)
 
         logger.critical(f'В ответе на запрос вернулась ошибка: {status_code}')
 
