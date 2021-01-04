@@ -36,6 +36,7 @@ def translate_text(text, language):
         'q': [text],
         'target': language_pair[0],
         'source': language_pair[1],
+        'format': 'text',
         })
 
     logger.info('Делаем запрос на перевод слова')
