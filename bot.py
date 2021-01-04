@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from telethon import TelegramClient, events
 
 import db_connector
-import translate
+import translate_google
 
 load_dotenv()
 
@@ -35,7 +35,7 @@ async def start(event):
 
 @bot.on(events.NewMessage)
 async def echo(event):
-    translated_text = translate.detect_and_translate_text(event.text)
+    translated_text = translate_google.detect_and_translate_text(event.text)
 
     sender = await event.get_sender()
 
