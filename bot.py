@@ -14,7 +14,9 @@ API_HASH = os.getenv('API_HASH')
 
 HELLO_TEXT = (
     'Привет! Я бот-переводчик - перевожу с английского языка на ' +
-    'русский или обратно. Просто напиши мне слово или фразу :)'
+    'русский или обратно. Просто напиши мне слово или фразу :)\r' +
+    '[Переведено Lingvo](https://developers.lingvolive.com/) и ' +
+    'Google Cloud Translation'
     )
 
 bot = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)

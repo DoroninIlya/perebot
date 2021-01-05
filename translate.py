@@ -19,12 +19,7 @@ def translate_text(text, language):
 
     logger.info('Делаем запрос на перевод слова')
 
-    response = translate_api_handler.get_translation(language_pair, text)
-
-    try:
-        translated_text = translate_api_handler.parse_translation_response(response.text)
-    except Exception:
-        logger.critical('Парсинг ответа не выполнен')
+    translated_text = translate_api_handler.get_translation(language_pair, text)
 
     return [language_pair[0], translated_text]
 
