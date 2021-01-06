@@ -179,7 +179,11 @@ def get_translation(language_pair, text):
 
 
 def get_language(text):
-    return getattr(Detect(), DETECTION_SERVICE)(text)
+    splited_text = text.split(' ')
+
+    short_text = ' '.join(splited_text[:2])
+
+    return getattr(Detect(), DETECTION_SERVICE)(short_text)
 
 
 def parse_language_response(text):
