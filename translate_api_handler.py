@@ -1,19 +1,14 @@
 import json
-import os
 
 import requests
 from dotenv import load_dotenv
 
+import config
+import errors
 import logger
+import utils
 
 load_dotenv()
-
-TRANSLATION_SERVICE = os.getenv('TRANSLATION_SERVICE')
-DETECTION_SERVICE = os.getenv('DETECTION_SERVICE')
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-ABBYY_API_TOKEN = os.getenv('ABBYY_API_TOKEN')
-TOKEN = os.getenv('YANDEX_TOKEN')
-FOLDER_ID = os.getenv('YANDEX_FOLDER_ID')
 
 GOOGLE_BASIC_URL = 'https://translation.googleapis.com/language/translate/v2'
 YANDEX_BASIC_URL = 'https://translate.api.cloud.yandex.net/translate/v2'
@@ -23,7 +18,7 @@ ABBYY_BASIC_URL = 'https://developers.lingvolive.com/api/v1'
 class Translate:
     def google(self, language_pair, text):
 
-        url = GOOGLE_BASIC_URL + '?key=' + GOOGLE_API_KEY
+        url = GOOGLE_BASIC_URL + '?key=' + config.GOOGLE_API_KEY
         payload = ({
             'q': [text],
             'target': language_pair[0],
@@ -36,28 +31,34 @@ class Translate:
 
         response = send_post_request(url, payload, headers)
 
+        if utils.is_response_failed(response):
+            return response
+
         return ParseTranslation.google(self, response.text)
 
     def yandex(self, language_pair, text):
         url = YANDEX_BASIC_URL + '/translate'
         payload = ({
-            'folder_id': FOLDER_ID,
+            'folder_id': config.YANDEX_FOLDER_ID,
             'texts': [text],
             'targetLanguageCode': language_pair[0],
             'sourceLanguageCode': language_pair[1],
             })
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Api-Key {TOKEN}',
+            'Authorization': f'Api-Key {config.YANDEX_API_TOKEN}',
             }
 
-        return send_post_request(url, payload, headers)
+        response = send_post_request(url, payload, headers)
+
+        if utils.is_response_failed(response):
+            return response
+
+        return ParseTranslation.yandex(self, response.text)
 
     def abbyy(self, language_pair, text):
 
-        is_single_word = len(text.split()) == 1
-
-        if is_single_word:
+        if utils.is_single_word(text):
             logger.info('Перевод слова - используем Abbyy')
 
             target_language = get_abbyy_language_code(language_pair[0])
@@ -71,10 +72,18 @@ class Translate:
             }
             headers = {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + ABBYY_API_TOKEN,
+                'Authorization': 'Bearer ' + config.ABBYY_API_TOKEN,
                 }
 
             response = send_get_request(url, query_parameters, headers)
+
+            if utils.is_response_failed(response):
+                logger.warning((
+                    'Перевод с помощью ABBYY Lingvo не выполнен. ' +
+                    'Для перевода будет использован Google.'
+                ))
+                
+                return Translate.google(self, language_pair, text)
 
             return ParseTranslation.abbyy(self, response.text)
         else:
@@ -86,26 +95,38 @@ class Translate:
 class ParseTranslation:
     def google(self, text):
         try:
-            return json.loads(text)['data']['translations'][0]['translatedText']
+            parsing_result = json.loads(text)['data']['translations'][0]['translatedText']
         except Exception:
             logger.critical('Парсинг ответа не выполнен')
+
+            parsing_result = errors.unspecified_error
+        
+        return parsing_result
 
     def yandex(self, text):
         try:
-            return json.loads(text)['translations'][0]['text']
+            parsing_result = json.loads(text)['translations'][0]['text']
         except Exception:
             logger.critical('Парсинг ответа не выполнен')
 
+            parsing_result = errors.unspecified_error
+
+        return parsing_result
+
     def abbyy(self, text):
         try:
-            return json.loads(text)['Translation']['Translation']
+            parsing_result = json.loads(text)['Translation']['Translation']
         except Exception:
             logger.critical('Парсинг ответа не выполнен')
+
+            parsing_result = errors.unspecified_error
+
+        return parsing_result
 
 
 class Detect:
     def google(self, text):
-        url = GOOGLE_BASIC_URL + '/detect' + '?key=' + GOOGLE_API_KEY
+        url = GOOGLE_BASIC_URL + '/detect' + '?key=' + config.GOOGLE_API_KEY
         payload = ({
             'q': [text],
             })
@@ -113,29 +134,53 @@ class Detect:
             'Content-Type': 'application/json',
             }
 
-        return send_post_request(url, payload, headers)
+        response = send_post_request(url, payload, headers)
+
+        if utils.is_response_failed(response):
+            return response
+
+        return ParseLanguage.google(self, response.text)
 
     def yandex(self, text):
         url = YANDEX_BASIC_URL + '/detect'
         payload = ({
-            'folder_id': FOLDER_ID,
+            'folder_id': config.YANDEX_FOLDER_ID,
             'languageCodeHints': ['ru', 'en'],
             'text': text,
             })
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Api-Key {TOKEN}',
+            'Authorization': f'Api-Key {config.YANDEX_API_TOKEN}',
             }
 
-        return send_post_request(url, payload, headers)
+        response = send_post_request(url, payload, headers)
+
+        if utils.is_response_failed(response):
+            return response
+
+        return ParseLanguage.yandex(self, response.text)
 
 
 class ParseLanguage:
     def google(self, text):
-        return json.loads(text)['data']['detections'][0][0]['language']
+        try:
+            parsing_result = json.loads(text)['data']['detections'][0][0]['language']
+        except Exception:
+            logger.critical('Парсинг ответа не выполнен')
+
+            parsing_result = errors.unspecified_error
+
+        return parsing_result
 
     def yandex(self, text):
-        return json.loads(text)['languageCode']
+        try:
+            parsing_result = json.loads(text)['languageCode']
+        except Exception:
+            logger.critical('Парсинг ответа не выполнен')
+
+            parsing_result = errors.unspecified_error
+
+        return parsing_result
 
 
 def send_post_request(url, payload, headers):
@@ -149,9 +194,9 @@ def send_post_request(url, payload, headers):
         status_code = str(response.status_code)
         response_text = str(response.text)
 
-        logger.critical(f'Пришел ответ с кодом {status_code} и текстом: {response_text}')
+        logger.critical(f'Пришел ответ с кодом {status_code} и текстом:\n{response_text}')
 
-        return status_code
+        return errors.unspecified_error
 
     return response
 
@@ -167,15 +212,15 @@ def send_get_request(url, query_parameters, headers):
         status_code = str(response.status_code)
         response_text = str(response.text)
 
-        logger.critical(f'Пришел ответ с кодом {status_code} и текстом: {response_text}')
+        logger.critical(f'Пришел ответ с кодом {status_code} и текстом:\n{response_text}')
 
-        return status_code
+        return errors.unspecified_error
 
     return response
 
 
 def get_translation(language_pair, text):
-    return getattr(Translate(), TRANSLATION_SERVICE)(language_pair, text)
+    return getattr(Translate(), config.TRANSLATION_SERVICE)(language_pair, text)
 
 
 def get_language(text):
@@ -183,11 +228,7 @@ def get_language(text):
 
     short_text = ' '.join(splited_text[:2])
 
-    return getattr(Detect(), DETECTION_SERVICE)(short_text)
-
-
-def parse_language_response(text):
-    return getattr(ParseLanguage(), DETECTION_SERVICE)(text)
+    return getattr(Detect(), config.DETECTION_SERVICE)(short_text)
 
 
 def get_abbyy_language_code(language):

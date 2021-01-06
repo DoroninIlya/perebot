@@ -6,12 +6,12 @@ logging.basicConfig(
     )
 
 
-def critical(message):
-    logging.critical(message)
-
-
 def info(message):
     logging.info(message)
+
+
+def warning(message):
+    logging.warning(message)
 
 
 def critical(message):

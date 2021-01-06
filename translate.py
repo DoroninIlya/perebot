@@ -1,27 +1,17 @@
+import errors
 import logger
 import translate_api_handler
+import utils
 
 FIRST_LANG = 'en'
 SECOND_LANG = 'ru'
-WRONG_TEXT_ERROR = (
-    'Вы ввели не текст. Для перевода вам необходимо ' +
-    'ввести текст на английском или русском языке'
-    )
-UNSPECIFIED_ERROR = (
-    'Что-то пошло не так... Кажется бот временно не работает. ' +
-    'Попробуйте еще раз позже'
-    )
 
 
-def translate_text(text, language):
-
-    language_pair = get_language_pair(language)
+def translate_text(language_pair, text):
 
     logger.info('Делаем запрос на перевод слова')
 
-    translated_text = translate_api_handler.get_translation(language_pair, text)
-
-    return [language_pair[0], translated_text]
+    return translate_api_handler.get_translation(language_pair, text)
 
 
 def get_language_pair(text_lenguage):
@@ -38,32 +28,26 @@ def get_language_pair(text_lenguage):
 
 def detect_language(text):
 
-    language = ''
-
     logger.info('Делаем запрос на определение языка')
 
-    response = translate_api_handler.get_language(text)
-
-    try:
-        language = translate_api_handler.parse_language_response(response.text)
-    except Exception:
-        logger.critical('Парсинг ответа не выполнен')
-
-    return language
+    return translate_api_handler.get_language(text)
 
 
 def detect_and_translate_text(text):
 
     if text == '':
-        return WRONG_TEXT_ERROR
+        return errors.wrong_text_error
 
     detected_language = detect_language(text)
 
-    if detected_language == '':
-        return WRONG_TEXT_ERROR
-    elif detected_language.isnumeric():
-        return UNSPECIFIED_ERROR
-    else:
-        translated_text = translate_text(text, detected_language)
+    if utils.is_response_failed(detected_language):
+        return detected_language
 
-    return [[detected_language, text], translated_text]
+    language_pair = get_language_pair(detected_language)
+
+    translated_text = translate_text(language_pair, text)
+
+    if utils.is_response_failed(translated_text):
+        return translated_text
+
+    return {'language': detected_language, 'translation': translated_text}

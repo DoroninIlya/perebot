@@ -1,16 +1,9 @@
-import os
-
-from dotenv import load_dotenv
 from telethon import TelegramClient, events
 
+import config
 import db_connector
 import translate
-
-load_dotenv()
-
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-API_ID = os.getenv('API_ID')
-API_HASH = os.getenv('API_HASH')
+import utils
 
 HELLO_TEXT = (
     'Привет! Я бот-переводчик - перевожу с английского языка на ' +
@@ -19,7 +12,11 @@ HELLO_TEXT = (
     'Google Cloud Translation'
     )
 
-bot = TelegramClient('bot', API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+bot = TelegramClient(
+    'bot',
+    config.API_ID,
+    config.API_HASH,
+    ).start(bot_token=config.BOT_TOKEN)
 
 db_connector.create_user_table()
 db_connector.create_dictionary()
@@ -38,13 +35,26 @@ async def start(event):
 
 @bot.on(events.NewMessage)
 async def echo(event):
-    translated_text = translate.detect_and_translate_text(event.text)
+    entered_text = event.text
+    translated_text = translate.detect_and_translate_text(entered_text)
 
     sender = await event.get_sender()
 
-    #db_connector.add_word_to_dictionary(sender.id, translated_text)
+    translation_result = ''
 
-    await event.respond(translated_text[1][1])
+    if 'error' in translated_text:
+        translation_result = translated_text['error']
+    elif 'translation' in translated_text:
+        translation_result = translated_text['translation']
+
+        if config.IS_ADD_TO_DICTIONARY == 'true' and utils.is_single_word(entered_text):
+            db_connector.add_word_to_dictionary(
+                sender.id,
+                translated_text['language'],
+                entered_text,
+                )
+
+    await event.respond(translation_result)
 
 
 def main():
