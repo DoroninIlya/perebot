@@ -1,8 +1,11 @@
+import asyncio
+
 from telethon import TelegramClient, events
 
 import config
 import db_connector
 import translate
+import translate_api_handler
 import utils
 
 HELLO_TEXT = (
@@ -42,9 +45,9 @@ async def echo(event):
 
     translation_result = ''
 
-    if 'error' in translated_text:
+    if utils.is_response_failed(translated_text):
         translation_result = translated_text['error']
-    elif 'translation' in translated_text:
+    else:
         translation_result = translated_text['translation']
 
         if config.IS_ADD_TO_DICTIONARY == 'true' and utils.is_single_word(entered_text):
@@ -57,7 +60,22 @@ async def echo(event):
     await event.respond(translation_result)
 
 
+async def refresh_abbyy_token():
+
+    print('Запущена задача обновления API-токена ABBYY Lingvo')
+
+    while True:
+        if config.IS_NEED_TO_REFRESH_ABBYY_API_TOKEN == 'true':
+            print("Обновляю токен")
+
+            translate_api_handler.refresh_abbyy_api_token()
+
+        await asyncio.sleep(int(config.SECOND_BEFORE_REFRESH_TOKEN))
+
+
 def main():
+    asyncio.get_event_loop().create_task(refresh_abbyy_token())
+
     bot.run_until_disconnected()
 
 

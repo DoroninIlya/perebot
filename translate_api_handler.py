@@ -1,14 +1,9 @@
 import json
 
-import requests
-from dotenv import load_dotenv
-
 import config
 import errors
 import logger
 import utils
-
-load_dotenv()
 
 GOOGLE_BASIC_URL = 'https://translation.googleapis.com/language/translate/v2'
 YANDEX_BASIC_URL = 'https://translate.api.cloud.yandex.net/translate/v2'
@@ -29,7 +24,7 @@ class Translate:
             'Content-Type': 'application/json',
             }
 
-        response = send_post_request(url, payload, headers)
+        response = utils.send_post_request(url, payload, headers)
 
         if utils.is_response_failed(response):
             return response
@@ -49,7 +44,7 @@ class Translate:
             'Authorization': f'Api-Key {config.YANDEX_API_TOKEN}',
             }
 
-        response = send_post_request(url, payload, headers)
+        response = utils.send_post_request(url, payload, headers)
 
         if utils.is_response_failed(response):
             return response
@@ -75,14 +70,14 @@ class Translate:
                 'Authorization': 'Bearer ' + config.ABBYY_API_TOKEN,
                 }
 
-            response = send_get_request(url, query_parameters, headers)
+            response = utils.send_get_request(url, query_parameters, headers)
 
             if utils.is_response_failed(response):
                 logger.warning((
                     'Перевод с помощью ABBYY Lingvo не выполнен. ' +
                     'Для перевода будет использован Google.'
                 ))
-                
+
                 return Translate.google(self, language_pair, text)
 
             return ParseTranslation.abbyy(self, response.text)
@@ -100,7 +95,7 @@ class ParseTranslation:
             logger.critical('Парсинг ответа не выполнен')
 
             parsing_result = errors.unspecified_error
-        
+
         return parsing_result
 
     def yandex(self, text):
@@ -134,7 +129,7 @@ class Detect:
             'Content-Type': 'application/json',
             }
 
-        response = send_post_request(url, payload, headers)
+        response = utils.send_post_request(url, payload, headers)
 
         if utils.is_response_failed(response):
             return response
@@ -153,7 +148,7 @@ class Detect:
             'Authorization': f'Api-Key {config.YANDEX_API_TOKEN}',
             }
 
-        response = send_post_request(url, payload, headers)
+        response = utils.send_post_request(url, payload, headers)
 
         if utils.is_response_failed(response):
             return response
@@ -183,42 +178,6 @@ class ParseLanguage:
         return parsing_result
 
 
-def send_post_request(url, payload, headers):
-
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-    except Exception:
-        logger.critical('Запрос не выполнен')
-
-    if not response.ok:
-        status_code = str(response.status_code)
-        response_text = str(response.text)
-
-        logger.critical(f'Пришел ответ с кодом {status_code} и текстом:\n{response_text}')
-
-        return errors.unspecified_error
-
-    return response
-
-
-def send_get_request(url, query_parameters, headers):
-
-    try:
-        response = requests.get(url, params=query_parameters, headers=headers)
-    except Exception:
-        logger.critical('Запрос не выполнен')
-
-    if not response.ok:
-        status_code = str(response.status_code)
-        response_text = str(response.text)
-
-        logger.critical(f'Пришел ответ с кодом {status_code} и текстом:\n{response_text}')
-
-        return errors.unspecified_error
-
-    return response
-
-
 def get_translation(language_pair, text):
     return getattr(Translate(), config.TRANSLATION_SERVICE)(language_pair, text)
 
@@ -238,3 +197,30 @@ def get_abbyy_language_code(language):
     }
 
     return dictionaries.get(language)
+
+
+def refresh_abbyy_api_token():
+
+    new_token = get_abbyy_api_token()
+
+    if utils.is_response_failed(new_token):
+        print(new_token['error'])
+    else:
+        config.ABBYY_API_TOKEN = new_token
+
+        print('Токен успешно обновлен')
+
+
+def get_abbyy_api_token():
+    url = ABBYY_BASIC_URL + '/authenticate'
+    payload = ''
+    headers = {
+        'Authorization': f'Basic {config.ABBYY_API_KEY}',
+        }
+
+    response = utils.send_post_request(url, payload, headers)
+
+    if utils.is_response_not_ok(response):
+        return errors.refresh_token_error
+
+    return response.text.replace('"', '')
