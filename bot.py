@@ -4,6 +4,7 @@ from telethon import TelegramClient, events
 
 import config
 import db_connector
+import logger
 import translate
 import translate_api_handler
 import utils
@@ -62,11 +63,11 @@ async def echo(event):
 
 async def refresh_abbyy_token():
 
-    print('Запущена задача обновления API-токена ABBYY Lingvo')
+    logger.info('Запущена задача обновления API-токена ABBYY Lingvo')
 
     while True:
         if config.IS_NEED_TO_REFRESH_ABBYY_API_TOKEN == 'true':
-            print("Обновляю токен")
+            logger.info('Обновляю токен...')
 
             translate_api_handler.refresh_abbyy_api_token()
 
@@ -74,7 +75,8 @@ async def refresh_abbyy_token():
 
 
 def main():
-    asyncio.get_event_loop().create_task(refresh_abbyy_token())
+    if config.TRANSLATION_SERVICE == 'abbyy':
+        asyncio.get_event_loop().create_task(refresh_abbyy_token())
 
     bot.run_until_disconnected()
 

@@ -13,7 +13,8 @@ ABBYY_BASIC_URL = 'https://developers.lingvolive.com/api/v1'
 class Translate:
     def google(self, language_pair, text):
 
-        url = GOOGLE_BASIC_URL + '?key=' + config.GOOGLE_API_KEY
+        url = GOOGLE_BASIC_URL
+        url_params = ({'key': config.GOOGLE_API_KEY})
         payload = ({
             'q': [text],
             'target': language_pair[0],
@@ -24,7 +25,7 @@ class Translate:
             'Content-Type': 'application/json',
             }
 
-        response = utils.send_post_request(url, payload, headers)
+        response = utils.send_request('POST', url, url_params, headers, payload)
 
         if utils.is_response_failed(response):
             return response
@@ -44,7 +45,7 @@ class Translate:
             'Authorization': f'Api-Key {config.YANDEX_API_TOKEN}',
             }
 
-        response = utils.send_post_request(url, payload, headers)
+        response = utils.send_request('POST', url, '', headers, payload)
 
         if utils.is_response_failed(response):
             return response
@@ -60,7 +61,7 @@ class Translate:
             source_language = get_abbyy_language_code(language_pair[1])
 
             url = ABBYY_BASIC_URL + '/Minicard'
-            query_parameters = {
+            url_params = {
                 'text': text,
                 'srcLang': source_language,
                 'dstLang': target_language,
@@ -70,9 +71,9 @@ class Translate:
                 'Authorization': 'Bearer ' + config.ABBYY_API_TOKEN,
                 }
 
-            response = utils.send_get_request(url, query_parameters, headers)
+            response = utils.send_request('GET', url, url_params, headers, '')
 
-            if utils.is_response_failed(response):
+            if utils.is_response_not_ok(response):
                 logger.warning((
                     'Перевод с помощью ABBYY Lingvo не выполнен. ' +
                     'Для перевода будет использован Google.'
@@ -92,7 +93,7 @@ class ParseTranslation:
         try:
             parsing_result = json.loads(text)['data']['translations'][0]['translatedText']
         except Exception:
-            logger.critical('Парсинг ответа не выполнен')
+            logger.critical(errors.parse_error['error'])
 
             parsing_result = errors.unspecified_error
 
@@ -102,7 +103,7 @@ class ParseTranslation:
         try:
             parsing_result = json.loads(text)['translations'][0]['text']
         except Exception:
-            logger.critical('Парсинг ответа не выполнен')
+            logger.critical(errors.parse_error['error'])
 
             parsing_result = errors.unspecified_error
 
@@ -112,7 +113,7 @@ class ParseTranslation:
         try:
             parsing_result = json.loads(text)['Translation']['Translation']
         except Exception:
-            logger.critical('Парсинг ответа не выполнен')
+            logger.critical(errors.parse_error['error'])
 
             parsing_result = errors.unspecified_error
 
@@ -121,7 +122,8 @@ class ParseTranslation:
 
 class Detect:
     def google(self, text):
-        url = GOOGLE_BASIC_URL + '/detect' + '?key=' + config.GOOGLE_API_KEY
+        url = GOOGLE_BASIC_URL + '/detect'
+        url_params = ({'key': config.GOOGLE_API_KEY})
         payload = ({
             'q': [text],
             })
@@ -129,7 +131,7 @@ class Detect:
             'Content-Type': 'application/json',
             }
 
-        response = utils.send_post_request(url, payload, headers)
+        response = utils.send_request('POST', url, url_params, headers, payload)
 
         if utils.is_response_failed(response):
             return response
@@ -148,7 +150,7 @@ class Detect:
             'Authorization': f'Api-Key {config.YANDEX_API_TOKEN}',
             }
 
-        response = utils.send_post_request(url, payload, headers)
+        response = utils.send_request('POST', url, '', headers, payload)
 
         if utils.is_response_failed(response):
             return response
@@ -204,21 +206,20 @@ def refresh_abbyy_api_token():
     new_token = get_abbyy_api_token()
 
     if utils.is_response_failed(new_token):
-        print(new_token['error'])
+        logger.critical(new_token['error'])
     else:
         config.ABBYY_API_TOKEN = new_token
 
-        print('Токен успешно обновлен')
+        logger.info('Токен успешно обновлен')
 
 
 def get_abbyy_api_token():
     url = ABBYY_BASIC_URL + '/authenticate'
-    payload = ''
     headers = {
         'Authorization': f'Basic {config.ABBYY_API_KEY}',
         }
 
-    response = utils.send_post_request(url, payload, headers)
+    response = utils.send_request('POST', url, '', headers, '')
 
     if utils.is_response_not_ok(response):
         return errors.refresh_token_error

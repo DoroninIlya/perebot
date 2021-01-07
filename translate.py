@@ -3,8 +3,9 @@ import logger
 import translate_api_handler
 import utils
 
-FIRST_LANG = 'en'
-SECOND_LANG = 'ru'
+EN_LANGUAGE = 'en'
+RU_LANGUAGE = 'ru'
+TG_LANGUAGE = 'tg'
 
 
 def translate_text(language_pair, text):
@@ -18,10 +19,10 @@ def get_language_pair(text_lenguage):
 
     language_codes = []
 
-    if text_lenguage == SECOND_LANG:
-        language_codes = [FIRST_LANG, SECOND_LANG]
+    if text_lenguage in [RU_LANGUAGE, TG_LANGUAGE]:
+        language_codes = [EN_LANGUAGE, RU_LANGUAGE]
     else:
-        language_codes = [SECOND_LANG, FIRST_LANG]
+        language_codes = [RU_LANGUAGE, EN_LANGUAGE]
 
     return language_codes
 

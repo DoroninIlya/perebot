@@ -9,3 +9,5 @@ unspecified_error = {'error': (
     )}
 
 refresh_token_error = {'error': 'Не удалось обновить токен'}
+
+parse_error = {'error': 'Парсинг ответа не выполнен'}
