@@ -1,4 +1,3 @@
-import os
 import uuid
 
 import psycopg2
@@ -16,13 +15,13 @@ def create_user_table():
     try:
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS USERS
-            (USER_ID INT UNIQUE NOT NULL,
+            (USER_ID INT NOT NULL,
             UUID UUID UNIQUE NOT NULL,
             IS_PREMIUM_USER BOOLEAN NOT NULL DEFAULT FALSE,
             PREMIUM_EXPIRED_DATE INT,
             CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP);""")
     except Exception:
-        logger.critical('Создание таблицы не выполнено')
+        logger.critical('Создание таблицы для пользователей не выполнено')
 
     connection.commit()
 
@@ -37,7 +36,9 @@ def add_user(user_id):
             (user_id, unique_id),
             )
     except Exception:
-        logger.critical('Добавление пользователя не выполнено')
+        logger.warning(f'Пользователь {user_id} не добавлен в таблицу')
+    else:
+        logger.info('Новый пользователь добавлен в таблицу')
 
     connection.commit()
 
@@ -48,13 +49,15 @@ def create_dictionary():
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS DICTIONARY
             (USER_ID INT NOT NULL,
-            RU TEXT UNIQUE,
-            EN TEXT UNIQUE,
+            RU TEXT,
+            EN TEXT,
             IS_LEARNED BOOLEAN,
             LEARNED_AT TIMESTAMP,
-            CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP);""")
+            CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT unique_pair_en UNIQUE (USER_ID, EN),
+            CONSTRAINT unique_pair_ru UNIQUE (USER_ID, RU));""")
     except Exception:
-        logger.critical('Создание таблицы не выполнено')
+        logger.critical('Создание таблицы для слов не выполнено')
 
     connection.commit()
 
@@ -67,8 +70,9 @@ def add_word_to_dictionary(user_id, source_language, word):
 
     try:
         cursor.execute(query, (user_id, word.lower()))
-        logger.info('Слово добавлено в словарь')
     except Exception:
-        logger.critical('Добавление слова в словарь не выполнено')
+        logger.warning('Добавление слова в словарь не выполнено')
+    else:
+        logger.info('Новое слово успешно добавлено в таблицу')
 
     connection.commit()
