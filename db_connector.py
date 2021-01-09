@@ -1,5 +1,3 @@
-import uuid
-
 import psycopg2
 from psycopg2 import sql
 
@@ -15,8 +13,8 @@ def create_user_table():
     try:
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS USERS
-            (USER_ID INT NOT NULL,
-            UUID UUID UNIQUE NOT NULL,
+            (USER_ID INT UNIQUE NOT NULL,
+            SELECTED_LANUAGE_PAIR TEXT,
             IS_PREMIUM_USER BOOLEAN NOT NULL DEFAULT FALSE,
             PREMIUM_EXPIRED_DATE INT,
             CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP);""")
@@ -27,14 +25,8 @@ def create_user_table():
 
 
 def add_user(user_id):
-
-    unique_id = str(uuid.uuid4())
-
     try:
-        cursor.execute(
-            'INSERT INTO USERS (USER_ID, UUID) VALUES (%s, %s);',
-            (user_id, unique_id),
-            )
+        cursor.execute('INSERT INTO USERS (USER_ID) VALUES (%s);', (user_id))
     except Exception:
         logger.warning(f'Пользователь {user_id} не добавлен в таблицу')
     else:
