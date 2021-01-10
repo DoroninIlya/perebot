@@ -14,21 +14,22 @@ def create_user_table():
         cursor.execute(
             """CREATE TABLE IF NOT EXISTS USERS
             (USER_ID INT UNIQUE NOT NULL,
-            SELECTED_LANUAGE_PAIR TEXT,
+            SELECTED_LANGUAGE_PAIR TEXT,
             IS_PREMIUM_USER BOOLEAN NOT NULL DEFAULT FALSE,
             PREMIUM_EXPIRED_DATE INT,
             CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP);""")
-    except Exception:
-        logger.critical('Создание таблицы для пользователей не выполнено')
+    except Exception as error:
+        logger.critical(f'Создание таблицы users не выполнено.\n{error}')
 
     connection.commit()
 
 
 def add_user(user_id):
+
     try:
-        cursor.execute('INSERT INTO USERS (USER_ID) VALUES (%s);', (user_id))
-    except Exception:
-        logger.warning(f'Пользователь {user_id} не добавлен в таблицу')
+        cursor.execute('INSERT INTO USERS (USER_ID) VALUES (%s);', ([user_id]))
+    except Exception as error:
+        logger.warning(f'Пользователь {user_id} не добавлен в таблицу.\n{error}')
     else:
         logger.info('Новый пользователь добавлен в таблицу')
 
@@ -48,8 +49,8 @@ def create_dictionary():
             CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT unique_pair_en UNIQUE (USER_ID, EN),
             CONSTRAINT unique_pair_ru UNIQUE (USER_ID, RU));""")
-    except Exception:
-        logger.critical('Создание таблицы для слов не выполнено')
+    except Exception as error:
+        logger.critical(f'Создание таблицы dictionary не выполнено.\n{error}')
 
     connection.commit()
 
@@ -62,9 +63,25 @@ def add_word_to_dictionary(user_id, source_language, word):
 
     try:
         cursor.execute(query, (user_id, word.lower()))
-    except Exception:
-        logger.warning('Добавление слова в словарь не выполнено')
+    except psycopg2.errors.UniqueViolation:
+        logger.info('Слово уже добавлено в словарь')
+    except Exception as error:
+        logger.warning(f'Добавление слова в словарь не выполнено.\n{error}')
     else:
         logger.info('Новое слово успешно добавлено в таблицу')
+
+    connection.commit()
+
+
+def select_language_pair(language_pair, user_id):
+    try:
+        cursor.execute(
+            'UPDATE USERS SET SELECTED_LANGUAGE_PAIR = %s WHERE USER_ID = %s;',
+            (language_pair, user_id),
+            )
+    except Exception as error:
+        logger.warning(f'Установка языковой пары не выполнена.\n{error}')
+    else:
+        logger.info('Выбранная языковая пара успешно добавлена в таблицу')
 
     connection.commit()

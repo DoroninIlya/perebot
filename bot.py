@@ -1,6 +1,6 @@
 import asyncio
 
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, Button
 
 import config
 import db_connector
@@ -37,8 +37,8 @@ async def start(event):
     raise events.StopPropagation
 
 
-@bot.on(events.NewMessage)
-async def echo(event):
+@bot.on(events.NewMessage(pattern=r'^[\/]{0}\w+'))
+async def new_word(event):
     entered_text = event.text
     translated_text = translate.detect_and_translate_text(entered_text)
 
@@ -59,6 +59,29 @@ async def echo(event):
                 )
 
     await event.respond(translation_result)
+
+@bot.on(events.NewMessage(pattern='/language'))
+async def change_language(event):
+    await bot.send_message(event.chat_id, 'Выберите пару языков:', buttons=[
+        Button.inline('Русский и английский', b'ru-en'),
+        Button.inline('Русский и французский', b'ru-fr')
+    ])
+
+
+@bot.on(events.CallbackQuery)
+async def callback_handler(event):
+    selected_language_pair = ''
+
+    if event.data == b'ru-en':
+        selected_language_pair = 'ru-en'
+    else:
+        selected_language_pair = 'ru-fr'
+
+    sender = await event.get_sender()
+
+    db_connector.select_language_pair(selected_language_pair, sender.id)
+
+    await event.respond(selected_language_pair)
 
 
 async def refresh_abbyy_token():
