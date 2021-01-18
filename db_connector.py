@@ -47,6 +47,7 @@ def create_dictionary():
             IS_LEARNED BOOLEAN,
             LEARNED_AT TIMESTAMP,
             CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            TRANSLATIONS_COUNT INT DEFAULT 1,
             CONSTRAINT unique_pair_en UNIQUE (USER_ID, EN),
             CONSTRAINT unique_pair_ru UNIQUE (USER_ID, RU));""")
     except Exception as error:
@@ -57,14 +58,17 @@ def create_dictionary():
 
 def add_word_to_dictionary(user_id, source_language, word):
 
+    lowered_word = word.lower()
+
     query = sql.SQL(
         'INSERT INTO DICTIONARY (USER_ID, {language}) VALUES (%s, %s)',
         ).format(language=sql.Identifier(source_language))
-
     try:
-        cursor.execute(query, (user_id, word.lower()))
+        cursor.execute(query, (user_id, lowered_word))
     except psycopg2.errors.UniqueViolation:
-        logger.info('Слово уже добавлено в словарь')
+        connection.commit()
+
+        increase_translations_count(user_id, source_language, lowered_word)
     except Exception as error:
         logger.warning(f'Добавление слова в словарь не выполнено.\n{error}')
     else:
@@ -85,3 +89,19 @@ def select_language_pair(language_pair, user_id):
         logger.info('Выбранная языковая пара успешно добавлена в таблицу')
 
     connection.commit()
+
+
+def increase_translations_count(user_id, source_language, lowered_word):
+    logger.info('Слово уже добавлено в словарь')
+
+    query = sql.SQL(
+        """UPDATE dictionary
+        SET translations_count = translations_count + 1
+        WHERE user_id = %s AND {language} = %s;""",
+        ).format(language=sql.Identifier(source_language))
+    try:
+        cursor.execute(query, (user_id, lowered_word))
+    except Exception as error:
+        logger.warning(f'Увеличение количества переводов не выполнено.\n{error}')
+    else:
+        logger.info('Увеличено количество переводов этого слова')
