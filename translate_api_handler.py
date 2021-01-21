@@ -196,6 +196,7 @@ def get_abbyy_language_code(language):
     dictionaries = {
         'en': 1033,
         'ru': 1049,
+        'fr': 1036,
     }
 
     return dictionaries.get(language)

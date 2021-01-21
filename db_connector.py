@@ -44,12 +44,14 @@ def create_dictionary():
             (USER_ID INT NOT NULL,
             RU TEXT,
             EN TEXT,
+            FR TEXT,
             IS_LEARNED BOOLEAN,
             LEARNED_AT TIMESTAMP,
             CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             TRANSLATIONS_COUNT INT DEFAULT 1,
+            CONSTRAINT unique_pair_ru UNIQUE (USER_ID, RU),
             CONSTRAINT unique_pair_en UNIQUE (USER_ID, EN),
-            CONSTRAINT unique_pair_ru UNIQUE (USER_ID, RU));""")
+            CONSTRAINT unique_pair_fr UNIQUE (USER_ID, FR));""")
     except Exception as error:
         logger.critical(f'Создание таблицы dictionary не выполнено.\n{error}')
 
@@ -105,3 +107,23 @@ def increase_translations_count(user_id, source_language, lowered_word):
         logger.warning(f'Увеличение количества переводов не выполнено.\n{error}')
     else:
         logger.info('Увеличено количество переводов этого слова')
+
+
+def get_selected_language_pair(user_id):
+    try:
+        cursor.execute(
+            'SELECT selected_language_pair FROM users WHERE user_id = %s;',
+            ([user_id]),
+            )
+    except Exception as error:
+        logger.warning(f'Получение языковой пары не выполнено.\n{error}')
+
+    selected_language = cursor.fetchone()
+
+    connection.commit()
+
+    if selected_language:
+        if selected_language[0]:
+            return selected_language[0]
+
+    return 'en-ru'
