@@ -1,5 +1,6 @@
 import requests
 
+import db_connector
 import logger
 
 
@@ -36,3 +37,20 @@ def is_response_not_ok(response):
         return True
 
     return False
+
+
+def prepare_tables():
+    db_connector.create_table_users()
+    db_connector.create_table_dictionary()
+    db_connector.create_table_user_statistics()
+
+
+def prepare_user(user_id):
+    db_connector.add_user(user_id)
+    db_connector.add_user_to_statistic(user_id)
+
+
+def increase_translation_counters(user_id, symbols_number):
+
+    db_connector.increase_requests_count(user_id)
+    db_connector.increase_symbols_count(user_id, symbols_number)

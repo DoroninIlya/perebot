@@ -24,15 +24,14 @@ bot = TelegramClient(
     config.API_HASH,
     ).start(bot_token=config.BOT_TOKEN)
 
-db_connector.create_user_table()
-db_connector.create_dictionary()
+utils.prepare_tables()
 
 
 @bot.on(events.NewMessage(pattern='/start'))
 async def start(event):
     sender = await event.get_sender()
 
-    db_connector.add_user(sender.id)
+    utils.prepare_user(sender.id)
 
     await event.respond(HELLO_TEXT)
 
@@ -55,6 +54,8 @@ async def new_word(event):
         translation_result = translated_text['error']
     else:
         translation_result = translated_text['translation']
+
+        utils.increase_translation_counters(sender.id, len(entered_text))
 
         if config.IS_ADD_TO_DICTIONARY == 'true' and utils.is_single_word(entered_text):
             db_connector.add_word_to_dictionary(
