@@ -51,13 +51,17 @@ def create_table_dictionary():
             RU TEXT,
             EN TEXT,
             FR TEXT,
+            ES TEXT,
+            DE TEXT,
             IS_LEARNED BOOLEAN,
             LEARNED_AT TIMESTAMP,
             CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             TRANSLATIONS_COUNT INT DEFAULT 1,
             CONSTRAINT unique_pair_ru UNIQUE (USER_ID, RU),
             CONSTRAINT unique_pair_en UNIQUE (USER_ID, EN),
-            CONSTRAINT unique_pair_fr UNIQUE (USER_ID, FR));""")
+            CONSTRAINT unique_pair_fr UNIQUE (USER_ID, FR),
+            CONSTRAINT unique_pair_es UNIQUE (USER_ID, ES),
+            CONSTRAINT unique_pair_de UNIQUE (USER_ID, DE));""")
     except Exception as error:
         logger.critical(f'Ошибка при создании таблицы словаря.\n{error}')
 

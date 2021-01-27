@@ -197,6 +197,8 @@ def get_abbyy_language_code(language):
         'en': 1033,
         'ru': 1049,
         'fr': 1036,
+        'es': 1034,
+        'de': 1031,
     }
 
     return dictionaries.get(language)

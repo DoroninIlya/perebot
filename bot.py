@@ -16,7 +16,9 @@ HELLO_TEXT = (
     'Google Cloud Translation'
     )
 EN_RU_PAIR = 'английский и русский'
+DE_RU_PAIR = 'немецкий и русский'
 FR_RU_PAIR = 'французский и русский'
+ES_RU_PAIR = 'испанский и русский'
 
 bot = TelegramClient(
     'bot',
@@ -78,8 +80,12 @@ async def change_language(event):
 
     if user_languages == 'en-ru':
         localized_user_language = EN_RU_PAIR
+    elif user_languages == 'de-ru':
+        localized_user_language = DE_RU_PAIR
     elif user_languages == 'fr-ru':
         localized_user_language = FR_RU_PAIR
+    elif user_languages == 'es-ru':
+        localized_user_language = ES_RU_PAIR
     else:
         localized_user_language = 'не определена'
 
@@ -88,10 +94,18 @@ async def change_language(event):
         'Для изменения выберите пару языков:'
     )
 
-    await bot.send_message(event.chat_id, (message), buttons=[
-        Button.inline(EN_RU_PAIR, b'en-ru'),
-        Button.inline(FR_RU_PAIR, b'fr-ru'),
-    ])
+    keyboard = [
+        [
+            Button.inline(EN_RU_PAIR, b'en-ru'),
+            Button.inline(DE_RU_PAIR, b'de-ru'),
+        ],
+        [
+            Button.inline(FR_RU_PAIR, b'fr-ru'),
+            Button.inline(ES_RU_PAIR, b'es-ru'),
+        ]
+    ]
+
+    await bot.send_message(event.chat_id, (message), buttons=keyboard)
 
 
 @bot.on(events.CallbackQuery)
@@ -101,9 +115,15 @@ async def callback_handler(event):
     if event.data == b'en-ru':
         selected_language_pair = 'en-ru'
         localized_user_language = EN_RU_PAIR
-    else:
+    elif event.data == b'de-ru':
+        selected_language_pair = 'de-ru'
+        localized_user_language = DE_RU_PAIR
+    elif event.data == b'fr-ru':
         selected_language_pair = 'fr-ru'
         localized_user_language = FR_RU_PAIR
+    else:
+        selected_language_pair = 'es-ru'
+        localized_user_language = ES_RU_PAIR
 
     sender = await event.get_sender()
 
