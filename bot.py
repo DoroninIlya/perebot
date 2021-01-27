@@ -14,11 +14,19 @@ HELLO_TEXT = (
     'русский или обратно. Просто напиши мне слово или фразу :)\r' +
     '[Переведено Lingvo](https://developers.lingvolive.com/) и ' +
     'Google Cloud Translation'
-    )
-EN_RU_PAIR = 'английский и русский'
-DE_RU_PAIR = 'немецкий и русский'
-FR_RU_PAIR = 'французский и русский'
-ES_RU_PAIR = 'испанский и русский'
+)
+UNSUPPORTED_LANGUAGE_PAIR_MESSAGE = (
+    'Текущая языковая пара не соответствует ни одной из доступных ' +
+    'языковых пар - пожалуйста, выберите иную.'
+)
+
+localized_language_pair_names = {
+    'en-ru': 'английский и русский',
+    'de-ru': 'немецкий и русский',
+    'fr-ru': 'французский и русский',
+    'es-ru': 'испанский и русский',
+}
+
 
 bot = TelegramClient(
     'bot',
@@ -78,58 +86,48 @@ async def change_language(event):
 
     user_languages = db_connector.get_selected_language_pair(sender.id)
 
-    if user_languages == 'en-ru':
-        localized_user_language = EN_RU_PAIR
-    elif user_languages == 'de-ru':
-        localized_user_language = DE_RU_PAIR
-    elif user_languages == 'fr-ru':
-        localized_user_language = FR_RU_PAIR
-    elif user_languages == 'es-ru':
-        localized_user_language = ES_RU_PAIR
+    if user_languages in localized_language_pair_names:
+        message = (
+            'Текущая выбранная языковая пара - ' +
+            localized_language_pair_names[user_languages] +
+            '.'
+        )
     else:
-        localized_user_language = 'не определена'
-
-    message = (
-        f'Текущая выбранная языковая пара - {localized_user_language}.\n\n' +
-        'Для изменения выберите пару языков:'
-    )
+        message = UNSUPPORTED_LANGUAGE_PAIR_MESSAGE
 
     keyboard = [
         [
-            Button.inline(EN_RU_PAIR, b'en-ru'),
-            Button.inline(DE_RU_PAIR, b'de-ru'),
+            Button.inline(localized_language_pair_names['en-ru'], 'en-ru'),
+            Button.inline(localized_language_pair_names['de-ru'], 'de-ru'),
         ],
         [
-            Button.inline(FR_RU_PAIR, b'fr-ru'),
-            Button.inline(ES_RU_PAIR, b'es-ru'),
-        ]
+            Button.inline(localized_language_pair_names['fr-ru'], 'fr-ru'),
+            Button.inline(localized_language_pair_names['es-ru'], 'es-ru'),
+        ],
     ]
 
-    await bot.send_message(event.chat_id, (message), buttons=keyboard)
+    await bot.send_message(
+        event.chat_id,
+        message + '\n\nДля изменения выберите пару языков:',
+        buttons=keyboard,
+    )
 
 
 @bot.on(events.CallbackQuery)
 async def callback_handler(event):
-    selected_language_pair = ''
+    button_data = event.data
 
-    if event.data == b'en-ru':
-        selected_language_pair = 'en-ru'
-        localized_user_language = EN_RU_PAIR
-    elif event.data == b'de-ru':
-        selected_language_pair = 'de-ru'
-        localized_user_language = DE_RU_PAIR
-    elif event.data == b'fr-ru':
-        selected_language_pair = 'fr-ru'
-        localized_user_language = FR_RU_PAIR
-    else:
-        selected_language_pair = 'es-ru'
-        localized_user_language = ES_RU_PAIR
+    selected_language_pair = button_data.decode('utf-8')
 
     sender = await event.get_sender()
 
-    db_connector.select_language_pair(selected_language_pair, sender.id)
+    db_connector.set_language_pair(selected_language_pair, sender.id)
 
-    await event.respond(f'Вы выбрали пару: {localized_user_language}.')
+    await event.respond((
+        'Вы выбрали пару: ' +
+        localized_language_pair_names[selected_language_pair] +
+        '.'
+    ))
 
 
 async def refresh_abbyy_token():

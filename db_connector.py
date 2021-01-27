@@ -89,7 +89,7 @@ def add_word_to_dictionary(user_id, source_language, word):
     connection.commit()
 
 
-def select_language_pair(language_pair, user_id):
+def set_language_pair(language_pair, user_id):
     try:
         cursor.execute(
             'UPDATE USERS SET SELECTED_LANGUAGE_PAIR = %s WHERE USER_ID = %s;',
