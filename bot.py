@@ -142,15 +142,15 @@ async def callback_handler(event):
 
 async def refresh_abbyy_token():
 
-    logger.info('Запущена задача обновления API-токена ABBYY Lingvo')
+    if config.IS_NEED_TO_REFRESH_ABBYY_API_TOKEN == 'true':
+        logger.info('Запущена задача обновления API-токена ABBYY Lingvo')
 
-    while True:
-        if config.IS_NEED_TO_REFRESH_ABBYY_API_TOKEN == 'true':
+        while True:
             logger.info('Обновляю токен...')
 
             translate_api_handler.refresh_abbyy_api_token()
 
-        await asyncio.sleep(int(config.SECOND_BEFORE_REFRESH_TOKEN))
+            await asyncio.sleep(int(config.SECOND_BEFORE_REFRESH_TOKEN))
 
 
 def main():
