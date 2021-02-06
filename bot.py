@@ -9,11 +9,15 @@ import translate_api_handler
 import utils
 from translate import detect_and_translate_text
 
-HELLO_TEXT = (
-    'Привет! Я бот-переводчик - я могу помочь тебе с переводом с ' +
+WHO_I_AM_TEXT = (
+    'Я бот-переводчик - я могу помочь тебе с переводом с ' +
     'английского, немецкого, французского или испанского языка на ' +
     'русский и обратно. Просто напиши мне слово или перешли сообщение, ' +
-    'которое надо перевести :)\n\nПо умолчанию выбран английский язык - ' +
+    'которое надо перевести :)'
+)
+HELLO_TEXT = (
+    'Привет! Я бот-переводчик - я могу помочь тебе с переводом с ' +
+    WHO_I_AM_TEXT + '\n\nПо умолчанию выбран английский язык - ' +
     'для изменения языка введи команду /language.\n\n' +
     '[Переведено Lingvo](https://developers.lingvolive.com/) и ' +
     'Google Cloud Translation.'
@@ -46,9 +50,12 @@ async def start(event):
 
     utils.prepare_user(sender.id)
 
-    await event.respond(HELLO_TEXT)
+    await bot.send_message(event.chat_id, HELLO_TEXT, link_preview=False)
 
-    raise events.StopPropagation
+
+@bot.on(events.NewMessage(pattern='/help'))
+async def help_message(event):
+    await bot.send_message(event.chat_id, WHO_I_AM_TEXT)
 
 
 @bot.on(events.NewMessage(pattern=r'^[\/]{0}\w+'))
