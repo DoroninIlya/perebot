@@ -1,18 +1,12 @@
-wrong_text_error = {'error': (
-    'Вы ввели не текст. Для перевода вам необходимо ' +
-    'ввести текст на английском или русском языке'
-    )}
+import localization
+from utils import error_decorator
 
-unspecified_error = {'error': (
-    'Что-то пошло не так... Кажется перевод временно не работает. ' +
-    'Попробуйте еще раз позже'
-    )}
+wrong_text_error = error_decorator(localization.WRONG_TEXT_ERROR)
 
-refresh_token_error = {'error': 'Не удалось обновить токен'}
+unspecified_error = error_decorator(localization.UNSPECIFIED_ERROR)
 
-parse_error = {'error': 'Парсинг ответа не выполнен'}
+language_not_detected = error_decorator(localization.LANGUAGE_NOT_DETECTED)
 
-language_not_detected = {'error': (
-    'Не удалось определить язык для перевода слова. Убедитесь, что ' +
-    'выбрана корректная языковая пара - для этого введите команду\n/language'
-    )}
+refresh_token_error = error_decorator(localization.REFRESH_TOKEN_ERROR)
+
+parse_error = error_decorator(localization.PARSE_ERROR)

@@ -54,3 +54,7 @@ def increase_translation_counters(user_id, symbols_number):
 
     db_connector.increase_requests_count(user_id)
     db_connector.increase_symbols_count(user_id, symbols_number)
+
+
+def error_decorator(error_type):
+    return {'error': error_type}

@@ -4,37 +4,18 @@ import asyncio
 
 import config
 import db_connector
+import localization
 import logger
 import translate_api_handler
 import utils
 from translate import detect_and_translate_text
 
-WHO_I_AM_TEXT = (
-    'Я бот-переводчик - я могу помочь тебе с переводом с ' +
-    'английского, немецкого, французского или испанского языка на ' +
-    'русский и обратно. Просто напиши мне слово или перешли сообщение, ' +
-    'которое надо перевести :)'
-)
-HELLO_TEXT = (
-    'Привет! ' +
-    WHO_I_AM_TEXT +
-    '\n\nПо умолчанию выбран английский язык - ' +
-    'для изменения языка введи команду /language.\n\n' +
-    '[Переведено Lingvo](https://developers.lingvolive.com/) и ' +
-    'Google Cloud Translation.'
-)
-UNSUPPORTED_LANGUAGE_PAIR_MESSAGE = (
-    'Текущая языковая пара не соответствует ни одной из доступных ' +
-    'языковых пар - пожалуйста, выберите иную.'
-)
-
 localized_language_pair_names = {
-    'en-ru': 'английский и русский',
-    'de-ru': 'немецкий и русский',
-    'fr-ru': 'французский и русский',
-    'es-ru': 'испанский и русский',
+    'en-ru': localization.EN_RU,
+    'de-ru': localization.DE_RU,
+    'fr-ru': localization.FR_RU,
+    'es-ru': localization.ES_RU,
 }
-
 
 bot = TelegramClient(
     'bot',
@@ -51,12 +32,16 @@ async def start(event):
 
     utils.prepare_user(sender.id)
 
-    await bot.send_message(event.chat_id, HELLO_TEXT, link_preview=False)
+    await bot.send_message(
+        event.chat_id,
+        localization.HELLO_TEXT,
+        link_preview=False,
+    )
 
 
 @bot.on(events.NewMessage(pattern='/help'))
 async def help_message(event):
-    await bot.send_message(event.chat_id, WHO_I_AM_TEXT)
+    await bot.send_message(event.chat_id, localization.WHO_I_AM_TEXT)
 
 
 @bot.on(events.NewMessage(pattern=r'^[\/]{0}\w+'))
@@ -99,12 +84,12 @@ async def change_language(event):
 
     if user_languages in localized_language_pair_names:
         message = (
-            'Текущая выбранная языковая пара - ' +
-            localized_language_pair_names[user_languages] +
-            '.'
+            localization.CURRENT_LANG_PAIR.format(
+                lang_pair=localized_language_pair_names[user_languages],
+            )
         )
     else:
-        message = UNSUPPORTED_LANGUAGE_PAIR_MESSAGE
+        message = localization.UNSUPPORTED_LANGUAGE_PAIR_MESSAGE
 
     keyboard = [
         [
@@ -119,7 +104,7 @@ async def change_language(event):
 
     await bot.send_message(
         event.chat_id,
-        message + '\n\nДля изменения выберите пару языков:',
+        message + '\n\n' + localization.FOR_CHANGING_PAIR,
         buttons=keyboard,
     )
 
@@ -134,11 +119,11 @@ async def callback_handler(event):
 
     db_connector.set_language_pair(selected_language_pair, sender.id)
 
-    await event.respond((
-        'Вы выбрали пару: ' +
-        localized_language_pair_names[selected_language_pair] +
-        '.'
-    ))
+    await event.respond(
+        localization.YOU_HAVE_CHOSEN_A_PAIR.format(
+            lang_pair=localized_language_pair_names[selected_language_pair],
+        )
+    )
 
 
 async def refresh_abbyy_token():
