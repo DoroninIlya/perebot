@@ -6,6 +6,7 @@ import config
 import db_connector
 import localization
 import logger
+import re
 import translate_api_handler
 import utils
 from translate import detect_and_translate_text
@@ -16,6 +17,8 @@ localized_language_pair_names = {
     'fr-ru': localization.FR_RU,
     'es-ru': localization.ES_RU,
 }
+
+forced_language_pattern = r'^\w{2}[:]'
 
 bot = TelegramClient(
     'bot',
@@ -55,7 +58,18 @@ async def new_word(event):
 
     entered_text = event.text
 
-    translated_text = detect_and_translate_text(entered_text, user_languages)
+    forced_language = None
+
+    if re.search(forced_language_pattern, entered_text):
+        forced_language = entered_text[:2].lower()
+        user_languages = f'{forced_language}-ru'
+        entered_text = entered_text[3:]
+
+    translated_text = detect_and_translate_text(
+        entered_text,
+        user_languages,
+        forced_language,
+        )
 
     translation_result = ''
 
