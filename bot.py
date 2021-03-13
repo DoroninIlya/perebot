@@ -51,9 +51,6 @@ async def help_message(event):
 async def new_word(event):
     sender = await event.get_sender()
 
-    #временный костыль, чтобы добавить в БД старых пользователей
-    utils.prepare_user(sender.id)
-
     user_languages = db_connector.get_selected_language_pair(sender.id)
 
     entered_text = event.text
