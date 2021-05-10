@@ -14,20 +14,18 @@ def translate_text(language_pair, text):
 
 def get_language_pair(text_language, user_language_pair):
 
-    language_codes = []
     language_pair = user_language_pair.split('-')
 
     if text_language in language_pair:
         if text_language == language_pair[0]:
-            language_codes = [language_pair[1], language_pair[0]]
-        else:
-            language_codes = [language_pair[0], language_pair[1]]
-    elif text_language in localization.AVAILABLE_LANGUAGES_LIST.keys():
-        return errors.language_not_detected(text_language)
-    else:
-        return errors.unknown_language
+            return [language_pair[1], language_pair[0]]
 
-    return language_codes
+        return [language_pair[0], language_pair[1]]
+
+    if text_language in localization.AVAILABLE_LANGUAGES_LIST.keys():
+        return errors.language_not_detected(text_language)
+
+    return errors.unknown_language
 
 
 def detect_language(text):
@@ -52,6 +50,9 @@ def detect_and_translate_text(text, user_language_pair, forced_language):
 
         if utils.is_response_failed(detected_language):
             return detected_language
+
+        if detected_language in localization.CYRILLIC_LANGUAGES_LIST:
+            detected_language = 'ru'
 
     language_pair = get_language_pair(detected_language, user_language_pair)
 

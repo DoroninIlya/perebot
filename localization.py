@@ -17,3 +17,4 @@ REFRESH_TOKEN_ERROR = 'Не удалось обновить токен'
 PARSE_ERROR = 'Парсинг ответа не выполнен'
 AVAILABLE_LANGUAGES = 'Доступные языки:\nru - русский,\nen - английский,\nde - немецкий,\nfr - французский,\nes - испанский.'
 AVAILABLE_LANGUAGES_LIST = {'ru': 'русском', 'en': 'английском', 'de': 'немецком', 'fr': 'французском', 'es': 'испанском'}
+CYRILLIC_LANGUAGES_LIST = ['uk', 'be', 'bg', 'mk', 'sr']
